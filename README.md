@@ -1,6 +1,6 @@
 # CNVkit Panel of Normals – Nextflow Pipeline
 
-Builds a `reference.cnn` from a pool of normal BAMs (here: 5 × 1000 Genomes samples)
+Builds a `reference.cnn` from a pool of normal CRAMs (here: 5 × 1000 Genomes samples)
 to replace Sarek's flat reference and remove coverage bias from your GIAB benchmarking run.
 
 ---
@@ -35,22 +35,22 @@ that match your sequencing protocol you correct for:
 Plain CSV, **no header**, three columns:
 
 ```
-sample_id,/absolute/path/to/sample.bam,/absolute/path/to/sample.bam.bai
+sample_id,/absolute/path/to/sample.cram,/absolute/path/to/sample.cram.crai
 ```
 
 Example:
 
 ```csv
-NA12878,/data/1000g/NA12878.bam,/data/1000g/NA12878.bam.bai
-NA12877,/data/1000g/NA12877.bam,/data/1000g/NA12877.bam.bai
-NA12879,/data/1000g/NA12879.bam,/data/1000g/NA12879.bam.bai
-NA12880,/data/1000g/NA12880.bam,/data/1000g/NA12880.bam.bai
-NA12881,/data/1000g/NA12881.bam,/data/1000g/NA12881.bam.bai
+NA12878,/data/1000g/NA12878.cram,/data/1000g/NA12878.cram.crai
+NA12877,/data/1000g/NA12877.cram,/data/1000g/NA12877.cram.crai
+NA12879,/data/1000g/NA12879.cram,/data/1000g/NA12879.cram.crai
+NA12880,/data/1000g/NA12880.cram,/data/1000g/NA12880.cram.crai
+NA12881,/data/1000g/NA12881.cram,/data/1000g/NA12881.cram.crai
 ```
 
 ### 2. Reference genome
 
-Must be the **same reference** used to align the 1000G BAMs **and** your GIAB sample
+Must be the **same reference** used to align the 1000G CRAMs **and** your GIAB sample
 (e.g. GRCh38 `Homo_sapiens_assembly38.fasta`).
 
 ### 3. Capture BED (WES only)
@@ -190,8 +190,8 @@ samplesheet.csv
 **"reference.cnn has very few bins"** – your `--targets` BED and `--fasta` may be on
 different genome builds (e.g. chr-prefixed vs non-prefixed). Ensure they match.
 
-**Coverage all zeros** – check BAI index is present and co-located with the BAM.
-Run `samtools quickcheck sample.bam` to verify file integrity.
+**Coverage all zeros** – check CRAI index is present and co-located with the CRAM.
+Run `samtools quickcheck sample.cram` to verify file integrity.
 
 **Sarek ignores `--cnvkit_reference`** – confirm you are on Sarek ≥ 3.2 and that the
 path is absolute, not relative.

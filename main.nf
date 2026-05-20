@@ -4,13 +4,13 @@ nextflow.enable.dsl = 2
 
 // ============================================================
 //  CNVkit Panel of Normals (PoN) pipeline
-//  Input  : 5 normal BAMs from 1000 Genomes
+//  Input  : 5 normal CRAMs from 1000 Genomes
 //  Output : reference.cnn  →  drop into Sarek --cnvkit_reference
 // ============================================================
 
 // ---------- parameter defaults ----------
-params.input        = null          // samplesheet CSV  (sample,bam,bai)
-params.fasta        = null          // reference genome  (must match BAMs)
+params.input        = null          // samplesheet CSV  (sample,cram,crai)
+params.fasta        = null          // reference genome  (must match CRAMs)
 params.fasta_fai    = null          // .fai index
 params.targets      = null          // BED of captured regions (null = WGS)
 params.antitargets  = null          // optional pre-computed antitarget BED
@@ -38,7 +38,7 @@ if (params.help) {
             --outdir     results
 
     Samplesheet format (CSV, no header):
-        sample_id,/abs/path/to/sample.bam,/abs/path/to/sample.bam.bai
+        sample_id,/abs/path/to/sample.cram,/abs/path/to/sample.cram.crai
 
     Outputs (in --outdir):
         reference.cnn          ← use with Sarek --cnvkit_reference
@@ -124,7 +124,7 @@ process CNVKIT_COVERAGE_TARGET {
     publishDir "${params.outdir}/coverage", mode: 'copy', overwrite: true
 
     input:
-    tuple val(meta), path(bam), path(bai)
+    tuple val(meta), path(cram), path(crai)
     path target_bed
     path fasta
     path fai
@@ -137,7 +137,7 @@ process CNVKIT_COVERAGE_TARGET {
     def count_opt = params.count_reads     ? "--count"                       : ""
     """
     cnvkit.py coverage \\
-        ${bam} \\
+        ${cram} \\
         ${target_bed} \\
         ${mapq_opt} \\
         ${count_opt} \\
@@ -154,7 +154,7 @@ process CNVKIT_COVERAGE_ANTITARGET {
     publishDir "${params.outdir}/coverage", mode: 'copy', overwrite: true
 
     input:
-    tuple val(meta), path(bam), path(bai)
+    tuple val(meta), path(cram), path(crai)
     path antitarget_bed
     path fasta
     path fai
@@ -167,7 +167,7 @@ process CNVKIT_COVERAGE_ANTITARGET {
     def count_opt = params.count_reads   ? "--count"                       : ""
     """
     cnvkit.py coverage \\
-        ${bam} \\
+        ${cram} \\
         ${antitarget_bed} \\
         ${mapq_opt} \\
         ${count_opt} \\
@@ -238,7 +238,7 @@ process CNVKIT_SCATTER_QC {
 
 workflow {
 
-    // --- input channel from CSV (sample,bam,bai) ---
+    // --- input channel from CSV (sample,cram,crai) ---
     ch_samples = Channel
         .fromPath(params.input)
         .splitCsv()

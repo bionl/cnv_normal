@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/Bionl/cnv_normal/main/nextflow_schema.json",
     "title": "cnvkit-pon pipeline parameters",
-    "description": "Build a CNVkit panel-of-normals reference.cnn from a pool of normal BAMs",
+    "description": "Build a CNVkit panel-of-normals reference.cnn from a pool of normal CRAMs",
     "type": "object",
     "definitions": {
         "input_output_options": {
@@ -17,8 +17,8 @@
                     "format": "file-path",
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
-                    "description": "Path to samplesheet CSV. Three columns, no header: sample_id, bam_path, bai_path.",
-                    "help_text": "Each row is one normal sample. Example:\n  NA12878,/data/NA12878.bam,/data/NA12878.bam.bai",
+                    "description": "Path to samplesheet CSV. Three columns, no header: sample_id, cram_path, crai_path.",
+                    "help_text": "Each row is one normal sample. Example:\n  NA12878,/data/NA12878.cram,/data/NA12878.cram.crai",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "fasta": {
@@ -26,7 +26,7 @@
                     "format": "file-path",
                     "mimetype": "text/plain",
                     "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
-                    "description": "Path to reference genome FASTA. Must match the build used to align the input BAMs.",
+                    "description": "Path to reference genome FASTA. Must match the build used to align the input CRAMs.",
                     "fa_icon": "fas fa-file"
                 },
                 "fasta_fai": {
