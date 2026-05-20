@@ -23,35 +23,6 @@ params.antitarget_avg_size = 500000 // cnvkit autobin antitarget average size
 params.min_mapq     = 0             // minimum mapping quality for coverage
 params.count_reads  = false         // use read-count instead of average depth
 
-// ---------- help ----------
-if (params.help) {
-    log.info """
-    ╔══════════════════════════════════════════════════════╗
-    ║        CNVkit Panel of Normals – Nextflow DSL2       ║
-    ╚══════════════════════════════════════════════════════╝
-
-    Usage:
-        nextflow run main.nf \\
-            --input      samplesheet.csv \\
-            --fasta      /path/to/genome.fa \\
-            --targets    /path/to/capture.bed \\   # omit for WGS
-            --outdir     results
-
-    Samplesheet format (CSV, no header):
-        sample_id,/abs/path/to/sample.cram,/abs/path/to/sample.cram.crai
-
-    Outputs (in --outdir):
-        reference.cnn          ← use with Sarek --cnvkit_reference
-        *.targetcoverage.cnn
-        *.antitargetcoverage.cnn
-    """.stripIndent()
-    exit 0
-}
-
-// ---------- validate ----------
-if (!params.fasta)  error "Please provide --fasta"
-if (!params.input)  error "Please provide --input samplesheet CSV"
-
 // ============================================================
 //  PROCESSES
 // ============================================================
@@ -237,6 +208,34 @@ process CNVKIT_SCATTER_QC {
 // ============================================================
 
 workflow {
+    // ---------- help ----------
+    if (params.help) {
+        log.info """
+        ╔══════════════════════════════════════════════════════╗
+        ║        CNVkit Panel of Normals – Nextflow DSL2       ║
+        ╚══════════════════════════════════════════════════════╝
+
+        Usage:
+            nextflow run main.nf \\
+                --input      samplesheet.csv \\
+                --fasta      /path/to/genome.fa \\
+                --targets    /path/to/capture.bed \\   # omit for WGS
+                --outdir     results
+
+        Samplesheet format (CSV, no header):
+            sample_id,/abs/path/to/sample.cram,/abs/path/to/sample.cram.crai
+
+        Outputs (in --outdir):
+            reference.cnn          ← use with Sarek --cnvkit_reference
+            *.targetcoverage.cnn
+            *.antitargetcoverage.cnn
+        """.stripIndent()
+        return
+    }
+
+    // ---------- validate ----------
+    if (!params.fasta)  error "Please provide --fasta"
+    if (!params.input)  error "Please provide --input samplesheet CSV"
 
     // --- input channel from CSV (sample,cram,crai) ---
     ch_samples = Channel
