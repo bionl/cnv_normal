@@ -1,0 +1,116 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/Bionl/cnv_normal/main/nextflow_schema.json",
+    "title": "cnvkit-pon pipeline parameters",
+    "description": "Build a CNVkit panel-of-normals reference.cnn from a pool of normal BAMs",
+    "type": "object",
+    "definitions": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Define the input files and where results are written.",
+            "required": ["input", "fasta", "targets"],
+            "properties": {
+                "input": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "Path to samplesheet CSV. Three columns, no header: sample_id, bam_path, bai_path.",
+                    "help_text": "Each row is one normal sample. Example:\n  NA12878,/data/NA12878.bam,/data/NA12878.bam.bai",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
+                    "description": "Path to reference genome FASTA. Must match the build used to align the input BAMs.",
+                    "fa_icon": "fas fa-file"
+                },
+                "fasta_fai": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?\\.fai$",
+                    "description": "Path to FASTA index (.fai). Auto-detected as <fasta>.fai if not supplied.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "targets": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.bed(\\.gz)?$",
+                    "description": "Capture BED file for the exome or panel kit. Must match the kit used in your Sarek run.",
+                    "fa_icon": "fas fa-crosshairs"
+                },
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory where results will be published.",
+                    "default": "results",
+                    "fa_icon": "fas fa-folder-open"
+                }
+            }
+        },
+        "cnvkit_options": {
+            "title": "CNVkit options",
+            "type": "object",
+            "fa_icon": "fas fa-sliders-h",
+            "description": "Parameters controlling CNVkit binning and coverage calculation.",
+            "properties": {
+                "access": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.bed(\\.gz)?$",
+                    "description": "Pre-computed accessible-genome BED (output of cnvkit.py access). Generated automatically if not supplied.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "annotate": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Gene annotation file (refFlat or similar) for labelling target bins.",
+                    "fa_icon": "fas fa-tag"
+                },
+                "short_names": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Shorten long region names in target and antitarget BEDs.",
+                    "fa_icon": "fas fa-compress-alt"
+                },
+                "target_avg_size": {
+                    "type": "integer",
+                    "default": 267,
+                    "minimum": 50,
+                    "maximum": 10000,
+                    "description": "Average target bin size in bp passed to cnvkit.py autobin. 267 is the CNVkit recommended default for WES.",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                },
+                "antitarget_avg_size": {
+                    "type": "integer",
+                    "default": 500000,
+                    "minimum": 10000,
+                    "description": "Average antitarget (off-target) bin size in bp.",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                },
+                "min_mapq": {
+                    "type": "integer",
+                    "default": 0,
+                    "minimum": 0,
+                    "maximum": 60,
+                    "description": "Minimum MAPQ for reads counted by cnvkit.py coverage. Set to 20 to exclude multi-mappers.",
+                    "fa_icon": "fas fa-filter"
+                },
+                "count_reads": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use read-count depth instead of average depth per base in coverage calculation.",
+                    "fa_icon": "fas fa-calculator"
+                }
+            }
+        }
+    },
+    "allOf": [
+        { "$ref": "#/definitions/input_output_options" },
+        { "$ref": "#/definitions/cnvkit_options" }
+    ]
+}
