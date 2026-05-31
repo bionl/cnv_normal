@@ -60,6 +60,7 @@ process CNVKIT_AUTOBIN {
     publishDir "${params.outdir}/reference", mode: 'copy', overwrite: true
 
     input:
+    path bams
     path targets_bed
     path access_bed
     path fasta
@@ -72,17 +73,19 @@ process CNVKIT_AUTOBIN {
     script:
     def annotate_opt = params.annotate ? "--annotate ${params.annotate}" : ""
     def short_opt    = params.short_names ? "--short-names" : ""
+    def bam_list     = bams instanceof List ? bams.join(' ') : bams
     """
     cnvkit.py autobin \\
-        ${targets_bed} \\
+        ${bam_list} \\
         -m hybrid \\
+        -t ${targets_bed} \\
         --access ${access_bed} \\
-        --target-avg-size   ${params.target_avg_size} \\
-        --antitarget-avg-size ${params.antitarget_avg_size} \\
+        --target-max-size ${params.target_avg_size} \\
+        --antitarget-max-size ${params.antitarget_avg_size} \\
         ${annotate_opt} \\
         ${short_opt} \\
-        -t targets_auto.target.bed \\
-        -g targets_auto.antitarget.bed
+        --target-output-bed targets_auto.target.bed \\
+        --antitarget-output-bed targets_auto.antitarget.bed
     """
 }
 
@@ -259,7 +262,9 @@ workflow {
 
     // --- target / antitarget BEDs ---
     if (params.targets) {
+        ch_bams_for_autobin = ch_samples.map { meta, bam, bai -> bam }.collect()
         CNVKIT_AUTOBIN(
+            ch_bams_for_autobin,
             file(params.targets),
             ch_access,
             ch_fasta,
