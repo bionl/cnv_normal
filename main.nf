@@ -33,6 +33,7 @@ process CNVKIT_ACCESS {
     label 'process_low'
 
     container 'etal/cnvkit:latest'
+    containerOptions '--user root'
     publishDir "${params.outdir}/reference", mode: 'copy', overwrite: true
 
     input:
@@ -57,6 +58,7 @@ process CNVKIT_AUTOBIN {
     label 'process_low'
 
     container 'etal/cnvkit:latest'
+    containerOptions '--user root'
     publishDir "${params.outdir}/reference", mode: 'copy', overwrite: true
 
     input:
@@ -95,6 +97,7 @@ process CNVKIT_COVERAGE_TARGET {
     label 'process_medium'
 
     container 'etal/cnvkit:latest'
+    containerOptions '--user root'
     publishDir "${params.outdir}/coverage", mode: 'copy', overwrite: true
 
     input:
@@ -125,6 +128,7 @@ process CNVKIT_COVERAGE_ANTITARGET {
     label 'process_medium'
 
     container 'etal/cnvkit:latest'
+    containerOptions '--user root'
     publishDir "${params.outdir}/coverage", mode: 'copy', overwrite: true
 
     input:
@@ -155,6 +159,7 @@ process CNVKIT_REFERENCE {
     label 'process_medium'
 
     container 'etal/cnvkit:latest'
+    containerOptions '--user root'
     publishDir "${params.outdir}/reference", mode: 'copy', overwrite: true
 
     input:
@@ -182,6 +187,7 @@ process CNVKIT_SCATTER_QC {
     label 'process_low'
 
     container 'etal/cnvkit:latest'
+    containerOptions '--user root'
     publishDir "${params.outdir}/qc/scatter", mode: 'copy', overwrite: true
 
     input:
