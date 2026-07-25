@@ -21,7 +21,6 @@ process CNVKIT_TARGET {
     """
     cnvkit.py target \\
         ${targets_bed} \\
-        --access ${access_bed} \\
         --avg-size ${params.target_avg_size} \\
         ${annotate_opt} \\
         ${short_opt} \\
@@ -29,7 +28,7 @@ process CNVKIT_TARGET {
 
     cnvkit.py antitarget \\
         ${targets_bed} \\
-        --access ${access_bed} \\
+        -g ${access_bed} \\
         --avg-size ${params.antitarget_avg_size} \\
         -o targets.antitarget.bed
     """

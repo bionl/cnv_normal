@@ -23,6 +23,7 @@ process CNVKIT_COVERAGE_TARGET {
     cnvkit.py coverage \\
         ${cram} \\
         ${target_bed} \\
+        -f ${fasta} \\
         ${mapq_opt} \\
         ${count_opt} \\
         -o ${meta.id}.targetcoverage.cnn
