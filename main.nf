@@ -2,263 +2,51 @@
 
 nextflow.enable.dsl = 2
 
-// ============================================================
-//  CNVkit Panel of Normals (PoN) pipeline
-//  Input  : 5 normal CRAMs from 1000 Genomes
-//  Output : reference.cnn  →  drop into Sarek --cnvkit_reference
-// ============================================================
+// ─────────────────────────────────────────────────────────────────────────────
+//  Module imports
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ---------- parameter defaults ----------
-params.input        = null          // samplesheet CSV  (sample,cram,crai)
-params.fasta        = null          // reference genome  (must match CRAMs)
-params.fasta_fai    = null          // .fai index
-params.targets      = null          // BED of captured regions (null = WGS)
-params.antitargets  = null          // optional pre-computed antitarget BED
-params.outdir       = "results"
-params.access       = null          // cnvkit access BED (auto-generated if null)
-params.annotate     = null          // optional refFlat / gene annotation BED
-params.short_names  = true          // shorten region names in output
-params.target_avg_size   = 267      // cnvkit autobin target average size
-params.antitarget_avg_size = 500000 // cnvkit autobin antitarget average size
-params.min_mapq     = 0             // minimum mapping quality for coverage
-params.count_reads  = false         // use read-count instead of average depth
+include { CNVKIT_ACCESS                               } from './modules/cnvkit_access'
+include { CNVKIT_TARGET                               } from './modules/cnvkit_target'
+include { CNVKIT_COVERAGE_TARGET; CNVKIT_COVERAGE_ANTITARGET } from './modules/cnvkit_coverage'
+include { CNVKIT_REFERENCE                            } from './modules/cnvkit_reference'
 
-// ============================================================
-//  PROCESSES
-// ============================================================
+// ─────────────────────────────────────────────────────────────────────────────
+//  Parameter defaults
+// ─────────────────────────────────────────────────────────────────────────────
 
-// 1. Build accessible-genome BED (skip if user supplies --access)
-process CNVKIT_ACCESS {
-    tag "access"
-    label 'process_low'
+params.input               = null
+params.fasta               = null
+params.fasta_fai           = null
+params.targets             = null
+params.access              = null
+params.annotate            = null
+params.outdir              = 'results'
+params.short_names         = true
+params.target_avg_size     = 267
+params.antitarget_avg_size = 500000
+params.min_mapq            = 0
+params.count_reads         = false
 
-    container 'etal/cnvkit:latest'
-    containerOptions '--user root'
-    publishDir "${params.outdir}/reference", mode: 'copy', overwrite: true
-
-    input:
-    path fasta
-    path fai
-
-    output:
-    path "access.bed", emit: access_bed
-
-    script:
-    """
-    cnvkit.py access \\
-        ${fasta} \\
-        -o access.bed
-    """
-}
-
-// 2. Auto-bin: derive target + antitarget BEDs from capture BED (WES)
-//    For WGS, skip this and go straight to coverage with --method wgs
-process CNVKIT_AUTOBIN {
-    tag "autobin"
-    label 'process_low'
-
-    container 'etal/cnvkit:latest'
-    containerOptions '--user root'
-    publishDir "${params.outdir}/reference", mode: 'copy', overwrite: true
-
-    input:
-    path bams
-    path targets_bed
-    path access_bed
-    path fasta
-    path fai
-
-    output:
-    path "*.target.bed",     emit: target_bed
-    path "*.antitarget.bed", emit: antitarget_bed
-
-    script:
-    def annotate_opt = params.annotate ? "--annotate ${params.annotate}" : ""
-    def short_opt    = params.short_names ? "--short-names" : ""
-    def bam_list     = bams instanceof List ? bams.join(' ') : bams
-    """
-    cnvkit.py autobin \\
-        ${bam_list} \\
-        -m hybrid \\
-        -t ${targets_bed} \\
-        --access ${access_bed} \\
-        --target-max-size ${params.target_avg_size} \\
-        --antitarget-max-size ${params.antitarget_avg_size} \\
-        ${annotate_opt} \\
-        ${short_opt} \\
-        --target-output-bed targets_auto.target.bed \\
-        --antitarget-output-bed targets_auto.antitarget.bed
-    """
-}
-
-// 3. Per-sample target coverage
-process CNVKIT_COVERAGE_TARGET {
-    tag "${meta.id} – target"
-    label 'process_medium'
-
-    container 'etal/cnvkit:latest'
-    containerOptions '--user root'
-    publishDir "${params.outdir}/coverage", mode: 'copy', overwrite: true
-
-    input:
-    tuple val(meta), path(cram), path(crai)
-    path target_bed
-    path fasta
-    path fai
-
-    output:
-    path "${meta.id}.targetcoverage.cnn", emit: target_cnn
-
-    script:
-    def mapq_opt  = params.min_mapq > 0   ? "--min-mapq ${params.min_mapq}" : ""
-    def count_opt = params.count_reads     ? "--count"                       : ""
-    """
-    cnvkit.py coverage \\
-        ${cram} \\
-        ${target_bed} \\
-        ${mapq_opt} \\
-        ${count_opt} \\
-        -o ${meta.id}.targetcoverage.cnn
-    """
-}
-
-// 4. Per-sample antitarget coverage
-process CNVKIT_COVERAGE_ANTITARGET {
-    tag "${meta.id} – antitarget"
-    label 'process_medium'
-
-    container 'etal/cnvkit:latest'
-    containerOptions '--user root'
-    publishDir "${params.outdir}/coverage", mode: 'copy', overwrite: true
-
-    input:
-    tuple val(meta), path(cram), path(crai)
-    path antitarget_bed
-    path fasta
-    path fai
-
-    output:
-    path "${meta.id}.antitargetcoverage.cnn", emit: antitarget_cnn
-
-    script:
-    def mapq_opt  = params.min_mapq > 0 ? "--min-mapq ${params.min_mapq}" : ""
-    def count_opt = params.count_reads   ? "--count"                       : ""
-    """
-    cnvkit.py coverage \\
-        ${cram} \\
-        ${antitarget_bed} \\
-        ${mapq_opt} \\
-        ${count_opt} \\
-        -o ${meta.id}.antitargetcoverage.cnn
-    """
-}
-
-// 5. Build the PoN reference from all normals
-process CNVKIT_REFERENCE {
-    tag "build_pon"
-    label 'process_medium'
-
-    container 'etal/cnvkit:latest'
-    containerOptions '--user root'
-    publishDir "${params.outdir}/reference", mode: 'copy', overwrite: true
-
-    input:
-    path target_cnns      // collected list
-    path antitarget_cnns  // collected list
-    path fasta
-    path fai
-
-    output:
-    path "reference.cnn", emit: reference_cnn
-
-    script:
-    """
-    cnvkit.py reference \\
-        ${target_cnns} \\
-        ${antitarget_cnns} \\
-        --fasta ${fasta} \\
-        -o reference.cnn
-    """
-}
-
-// 6. QC: plot per-sample coverage scatter (optional but useful)
-process CNVKIT_SCATTER_QC {
-    tag "${sample_id}"
-    label 'process_low'
-
-    container 'etal/cnvkit:latest'
-    containerOptions '--user root'
-    publishDir "${params.outdir}/qc/scatter", mode: 'copy', overwrite: true
-
-    input:
-    tuple val(sample_id), path(target_cnn), path(antitarget_cnn)
-    path reference_cnn
-
-    output:
-    path "${sample_id}_scatter.pdf", optional: true
-
-    script:
-    """
-    # First fix the coverage to log2 ratios vs the new reference
-    cnvkit.py fix \\
-        ${target_cnn} \\
-        ${antitarget_cnn} \\
-        ${reference_cnn} \\
-        -o ${sample_id}.cnr
-
-    cnvkit.py scatter \\
-        ${sample_id}.cnr \\
-        -o ${sample_id}_scatter.pdf || true
-    """
-}
-
-// ============================================================
-//  WORKFLOW
-// ============================================================
+// ─────────────────────────────────────────────────────────────────────────────
+//  Workflow
+// ─────────────────────────────────────────────────────────────────────────────
 
 workflow {
-    // ---------- help ----------
-    if (params.help) {
-        log.info """
-        ╔══════════════════════════════════════════════════════╗
-        ║        CNVkit Panel of Normals – Nextflow DSL2       ║
-        ╚══════════════════════════════════════════════════════╝
 
-        Usage:
-            nextflow run main.nf \\
-                --input      samplesheet.csv \\
-                --fasta      /path/to/genome.fa \\
-                --targets    /path/to/capture.bed \\   # omit for WGS
-                --outdir     results
-
-        Samplesheet format (CSV, no header):
-            sample_id,/abs/path/to/sample.cram,/abs/path/to/sample.cram.crai
-
-        Outputs (in --outdir):
-            reference.cnn          ← use with Sarek --cnvkit_reference
-            *.targetcoverage.cnn
-            *.antitargetcoverage.cnn
-        """.stripIndent()
-        return
-    }
-
-    // ---------- validate ----------
-    if (!params.fasta)  error "Please provide --fasta"
-    if (!params.input)  error "Please provide --input samplesheet CSV"
-
-    // --- input channel from CSV (sample,cram,crai) ---
-    ch_samples = Channel
-        .fromPath(params.input)
-        .splitCsv()
-        .map { row ->
-            def meta = [id: row[0]]
-            [ meta, file(row[1]), file(row[2]) ]
-        }
+    if (!params.fasta)   error "Please provide --fasta"
+    if (!params.input)   error "Please provide --input (samplesheet CSV)"
+    if (!params.targets) error "Please provide --targets (capture BED)"
 
     ch_fasta = file(params.fasta)
     ch_fai   = params.fasta_fai ? file(params.fasta_fai) : file("${params.fasta}.fai")
 
-    // --- access BED ---
+    ch_samples = Channel
+        .fromPath(params.input)
+        .splitCsv()
+        .map { row -> [ [id: row[0]], file(row[1]), file(row[2]) ] }
+
+    // 1. Access BED
     if (params.access) {
         ch_access = Channel.value(file(params.access))
     } else {
@@ -266,65 +54,29 @@ workflow {
         ch_access = CNVKIT_ACCESS.out.access_bed
     }
 
-    // --- target / antitarget BEDs ---
-    if (params.targets) {
-        ch_bams_for_autobin = ch_samples.map { meta, bam, bai -> bam }.collect()
-        CNVKIT_AUTOBIN(
-            ch_bams_for_autobin,
-            file(params.targets),
-            ch_access,
-            ch_fasta,
-            ch_fai
-        )
-        ch_target_bed     = CNVKIT_AUTOBIN.out.target_bed
-        ch_antitarget_bed = CNVKIT_AUTOBIN.out.antitarget_bed
-    } else {
-        // WGS mode: cnvkit.py access output is both target & antitarget
-        error "WGS mode: please supply --targets (WES BED) or adapt autobin for wgs method"
-    }
+    // 2. Target + antitarget BEDs
+    CNVKIT_TARGET(file(params.targets), ch_access)
 
-    // --- per-sample coverage ---
+    // 3. Per-sample coverage
     CNVKIT_COVERAGE_TARGET(
         ch_samples,
-        ch_target_bed,
+        CNVKIT_TARGET.out.target_bed,
         ch_fasta,
         ch_fai
     )
 
     CNVKIT_COVERAGE_ANTITARGET(
         ch_samples,
-        ch_antitarget_bed,
+        CNVKIT_TARGET.out.antitarget_bed,
         ch_fasta,
         ch_fai
     )
 
-    // --- collect all coverage CNNs ---
-    ch_all_target_cnns     = CNVKIT_COVERAGE_TARGET.out.target_cnn.collect()
-    ch_all_antitarget_cnns = CNVKIT_COVERAGE_ANTITARGET.out.antitarget_cnn.collect()
-
-    // --- build reference ---
+    // 4. Build PoN reference
     CNVKIT_REFERENCE(
-        ch_all_target_cnns,
-        ch_all_antitarget_cnns,
+        CNVKIT_COVERAGE_TARGET.out.target_cnn.collect(),
+        CNVKIT_COVERAGE_ANTITARGET.out.antitarget_cnn.collect(),
         ch_fasta,
         ch_fai
     )
-
-    // --- QC scatter plots ---
-    ch_cov_pairs = CNVKIT_COVERAGE_TARGET.out.target_cnn
-        .map { cnn -> [ cnn.baseName.replaceAll(/\.targetcoverage$/, ""), cnn ] }
-        .join(
-            CNVKIT_COVERAGE_ANTITARGET.out.antitarget_cnn
-                .map { cnn -> [ cnn.baseName.replaceAll(/\.antitargetcoverage$/, ""), cnn ] }
-        )
-
-    CNVKIT_SCATTER_QC(
-        ch_cov_pairs,
-        CNVKIT_REFERENCE.out.reference_cnn
-    )
-
-    // --- final message ---
-    CNVKIT_REFERENCE.out.reference_cnn.view { ref ->
-        "\n✅  PoN reference built: ${ref}\n   → Use with Sarek: --cnvkit_reference ${params.outdir}/reference/reference.cnn\n"
-    }
 }
