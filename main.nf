@@ -38,8 +38,8 @@ workflow {
     if (!params.input)   error "Please provide --input (samplesheet CSV)"
     if (!params.targets) error "Please provide --targets (capture BED)"
 
-    ch_fasta = file(params.fasta)
-    ch_fai   = params.fasta_fai ? file(params.fasta_fai) : file("${params.fasta}.fai")
+    ch_fasta = Channel.value(file(params.fasta))
+    ch_fai   = Channel.value(params.fasta_fai ? file(params.fasta_fai) : file("${params.fasta}.fai"))
 
     ch_samples = Channel
         .fromPath(params.input)
@@ -55,7 +55,7 @@ workflow {
     }
 
     // 2. Target + antitarget BEDs
-    CNVKIT_TARGET(file(params.targets), ch_access)
+    CNVKIT_TARGET(Channel.value(file(params.targets)), ch_access)
 
     // 3. Per-sample coverage
     CNVKIT_COVERAGE_TARGET(
