@@ -44,7 +44,12 @@ workflow {
     ch_samples = Channel
         .fromPath(params.input)
         .splitCsv()
-        .map { row -> [ [id: row[0]], file(row[1]), file(row[2]) ] }
+        .map { row ->
+            def meta = [id: row[0]]
+            def cram = file(row[1], checkIfExists: false)
+            def crai = file(row[2], checkIfExists: false)
+            [ meta, cram, crai ]
+        }
 
     // 1. Access BED
     if (params.access) {
