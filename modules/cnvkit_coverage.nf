@@ -53,6 +53,7 @@ process CNVKIT_COVERAGE_ANTITARGET {
     cnvkit.py coverage \\
         ${cram} \\
         ${antitarget_bed} \\
+        -f ${fasta} \\
         ${mapq_opt} \\
         ${count_opt} \\
         -o ${meta.id}.antitargetcoverage.cnn
