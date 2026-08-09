@@ -24,6 +24,7 @@ process CNVKIT_COVERAGE_TARGET {
         ${cram} \\
         ${target_bed} \\
         -f ${fasta} \\
+        -p ${task.cpus} \\
         ${mapq_opt} \\
         ${count_opt} \\
         -o ${meta.id}.targetcoverage.cnn
@@ -54,6 +55,7 @@ process CNVKIT_COVERAGE_ANTITARGET {
         ${cram} \\
         ${antitarget_bed} \\
         -f ${fasta} \\
+        -p ${task.cpus} \\
         ${mapq_opt} \\
         ${count_opt} \\
         -o ${meta.id}.antitargetcoverage.cnn
