@@ -20,8 +20,11 @@ process CNVKIT_COVERAGE_TARGET {
     def mapq_opt  = params.min_mapq   > 0 ? "--min-mapq ${params.min_mapq}" : ""
     def count_opt = params.count_reads     ? "--count"                        : ""
     """
+    ln -s ${cram} input.cram
+    ln -s ${crai} input.cram.crai
+
     cnvkit.py coverage \\
-        ${cram} \\
+        input.cram \\
         ${target_bed} \\
         -f ${fasta} \\
         -p ${task.cpus} \\
@@ -51,8 +54,11 @@ process CNVKIT_COVERAGE_ANTITARGET {
     def mapq_opt  = params.min_mapq   > 0 ? "--min-mapq ${params.min_mapq}" : ""
     def count_opt = params.count_reads     ? "--count"                        : ""
     """
+    ln -s ${cram} input.cram
+    ln -s ${crai} input.cram.crai
+
     cnvkit.py coverage \\
-        ${cram} \\
+        input.cram \\
         ${antitarget_bed} \\
         -f ${fasta} \\
         -p ${task.cpus} \\
