@@ -19,12 +19,15 @@ process CNVKIT_COVERAGE_TARGET {
     script:
     def mapq_opt  = params.min_mapq   > 0 ? "--min-mapq ${params.min_mapq}" : ""
     def count_opt = params.count_reads     ? "--count"                        : ""
+    def is_cram   = cram.name.endsWith('.cram')
+    def ext       = is_cram ? 'cram' : 'bam'
+    def idx_ext   = is_cram ? 'cram.crai' : 'bam.bai'
     """
-    ln -s ${cram} input.cram
-    ln -s ${crai} input.cram.crai
+    ln -s ${cram} input.${ext}
+    ln -s ${crai} input.${idx_ext}
 
     cnvkit.py coverage \\
-        input.cram \\
+        input.${ext} \\
         ${target_bed} \\
         -f ${fasta} \\
         -p ${task.cpus} \\
@@ -53,12 +56,15 @@ process CNVKIT_COVERAGE_ANTITARGET {
     script:
     def mapq_opt  = params.min_mapq   > 0 ? "--min-mapq ${params.min_mapq}" : ""
     def count_opt = params.count_reads     ? "--count"                        : ""
+    def is_cram   = cram.name.endsWith('.cram')
+    def ext       = is_cram ? 'cram' : 'bam'
+    def idx_ext   = is_cram ? 'cram.crai' : 'bam.bai'
     """
-    ln -s ${cram} input.cram
-    ln -s ${crai} input.cram.crai
+    ln -s ${cram} input.${ext}
+    ln -s ${crai} input.${idx_ext}
 
     cnvkit.py coverage \\
-        input.cram \\
+        input.${ext} \\
         ${antitarget_bed} \\
         -f ${fasta} \\
         -p ${task.cpus} \\

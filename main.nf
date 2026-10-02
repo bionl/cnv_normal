@@ -7,6 +7,7 @@ nextflow.enable.dsl = 2
 // ─────────────────────────────────────────────────────────────────────────────
 
 include { CNVKIT_ACCESS                               } from './modules/cnvkit_access'
+include { CNVKIT_AUTOBIN                              } from './modules/cnvkit_autobin'
 include { CNVKIT_TARGET                               } from './modules/cnvkit_target'
 include { CNVKIT_COVERAGE_TARGET; CNVKIT_COVERAGE_ANTITARGET } from './modules/cnvkit_coverage'
 include { CNVKIT_REFERENCE                            } from './modules/cnvkit_reference'
@@ -34,9 +35,8 @@ params.count_reads         = false
 
 workflow {
 
-    if (!params.fasta)   error "Please provide --fasta"
-    if (!params.input)   error "Please provide --input (samplesheet CSV)"
-    if (!params.targets) error "Please provide --targets (capture BED)"
+    if (!params.fasta) error "Please provide --fasta"
+    if (!params.input) error "Please provide --input (samplesheet CSV)"
 
     ch_fasta = Channel.value(file(params.fasta))
     ch_fai   = Channel.value(params.fasta_fai ? file(params.fasta_fai) : file("${params.fasta}.fai"))
@@ -60,19 +60,36 @@ workflow {
     }
 
     // 2. Target + antitarget BEDs
-    CNVKIT_TARGET(Channel.value(file(params.targets)), ch_access)
+    //    — if a capture BED is provided, use cnvkit target/antitarget
+    //    — otherwise infer target regions from the CRAMs via autobin
+    if (params.targets) {
+        CNVKIT_TARGET(Channel.value(file(params.targets)), ch_access)
+        ch_target_bed    = CNVKIT_TARGET.out.target_bed
+        ch_antitarget_bed = CNVKIT_TARGET.out.antitarget_bed
+    } else {
+        log.warn "No --targets BED provided — falling back to cnvkit autobin (target regions inferred from CRAMs)"
+        CNVKIT_AUTOBIN(
+            ch_samples.map { meta, cram, crai -> cram }.collect(),
+            ch_samples.map { meta, cram, crai -> crai }.collect(),
+            ch_access,
+            ch_fasta,
+            ch_fai
+        )
+        ch_target_bed    = CNVKIT_AUTOBIN.out.target_bed
+        ch_antitarget_bed = CNVKIT_AUTOBIN.out.antitarget_bed
+    }
 
     // 3. Per-sample coverage
     CNVKIT_COVERAGE_TARGET(
         ch_samples,
-        CNVKIT_TARGET.out.target_bed,
+        ch_target_bed,
         ch_fasta,
         ch_fai
     )
 
     CNVKIT_COVERAGE_ANTITARGET(
         ch_samples,
-        CNVKIT_TARGET.out.antitarget_bed,
+        ch_antitarget_bed,
         ch_fasta,
         ch_fai
     )
