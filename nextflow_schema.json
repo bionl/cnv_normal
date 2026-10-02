@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define the input files and where results are written.",
-            "required": ["input", "fasta", "targets"],
+            "required": ["input", "fasta"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -40,7 +40,7 @@
                     "type": "string",
                     "format": "file-path",
                     "pattern": "^\\S+\\.bed(\\.gz)?$",
-                    "description": "Capture BED file for the exome or panel kit. Must match the kit used in your Sarek run.",
+                    "description": "Capture BED file for the exome or panel kit. Optional — if not provided, target regions are inferred automatically from the BAM/CRAM files using cnvkit autobin.",
                     "fa_icon": "fas fa-crosshairs"
                 },
                 "outdir": {
