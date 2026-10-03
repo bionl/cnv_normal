@@ -36,7 +36,7 @@ process CNVKIT_AUTOBIN {
 
     cnvkit.py autobin \\
         \$ALN_FILES \\
-        -m wes \\
+        -m hybrid \\
         -g ${access_bed} \\
         -f ${fasta} \\
         ${annotate_opt} \\
