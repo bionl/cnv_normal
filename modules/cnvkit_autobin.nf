@@ -25,7 +25,7 @@ process CNVKIT_AUTOBIN {
     """
     cnvkit.py autobin \\
         ${crams} \\
-        -m hybrid \\
+        -m wgs \\
         -g ${access_bed} \\
         -f ${fasta} \\
         ${annotate_opt} \\
