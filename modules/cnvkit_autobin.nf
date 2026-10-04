@@ -20,27 +20,16 @@ process CNVKIT_AUTOBIN {
 
     script:
     def annotate_opt = params.annotate ? "--annotate ${params.annotate}" : ""
+    // Nextflow stages all files into the work dir — BAMs/CRAMs and their
+    // indices land side-by-side, so no symlinks are needed here.
     """
-    # Symlink all alignment files and their indices so pysam can find them
-    for aln in ${crams}; do
-        base=\$(basename \$aln)
-        ln -sf \$aln \$base
-    done
-    for idx in ${crais}; do
-        base=\$(basename \$idx)
-        ln -sf \$idx \$base
-    done
-
-    # Collect BAMs and/or CRAMs (whichever were provided)
-    ALN_FILES=\$(ls *.bam *.cram 2>/dev/null | tr '\\n' ' ')
-
     cnvkit.py autobin \\
-        \$ALN_FILES \\
+        ${crams} \\
         -m hybrid \\
         -g ${access_bed} \\
         -f ${fasta} \\
         ${annotate_opt} \\
-        --target-output-bed   targets.target.bed \\
+        --target-output-bed     targets.target.bed \\
         --antitarget-output-bed targets.antitarget.bed
     """
 }
